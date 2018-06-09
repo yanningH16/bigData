@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+<meta charset="UTF-8">
+<title>河南数慧地名地址数据中心-地图模块</title>
+<link rel="stylesheet" href="css/ol.css" />
+<script src="js/jquery-2.2.3.min.js"></script>
+<script type="text/javascript" src="js/ol.js"></script>
+<script type="text/javascript" src="js/echarts-all.js"></script>
+<link rel="stylesheet" href="css/bootstrap.min.css">
+<script src="js/bootstrap.min.js"></script>
+</head>
+
+<body>
+	<div>
+		<div id="mapcontent" class="map_div" style="height: 980px; width: 1080px">
+		<div id="popup">
+		<div id="chartcontent" style="height: 150px; width: 550px"></div>
+		</div>
+		</div>
+		
+	</div>
+</body>
+<script type="text/javascript">
+	//javascript脚本
+	var data = [];
+	//初始化
+	var url='http://192.168.1.109:8090/DataCenter/GetData?TYPE=area2';
+	jQuery.ajax({
+		   type : "GET",
+		   dataType : 'json',
+		   cache : false,
+		   url : url,
+		   async : false,
+			timeout : 10000,
+			processData : false,
+			beforeSend : function(XHR) {
+			},
+			success : function(jsonData) {
+				data = jsonData;
+			},
+			error : function(XMLHttpRequest, textStatus, errorThrown) {
+				alert("请求失败！");
+			}
+	   });
+	
+    function initChart(i) {
+    	var data_chart = data[i].data;
+    	var option = {
+    		    tooltip: {
+    		      trigger: 'item',
+    		      formatter: "{b} : {c}({d}%)"
+    		    },
+    		    toolbox:{
+    		      show:false,
+    		      feature : {
+    		          mark : {show: true},
+    		          magicType : {
+    		              show: true,
+    		              type: ['pie', 'funnel']
+    		          },
+    		      }
+    		    },
+    		    calculable: true,
+    		    series: [{
+    		        type: 'pie',
+    		        radius: '60%',
+    		        center: ['22.5%','50%'],
+    		        startAngle:45,
+    		        label: {
+    		            normal: {
+    		                show: false
+    		            },
+    		            emphasis: {
+    		                show: false,
+    		                textStyle:{
+    		                  color: '#000000',
+    		                  fontWeight:'bold',
+    		                  fontSize:16
+    		                }
+    		            }
+    		        },
+    		        lableLine: {
+    		          normal: {
+    		              show: false
+    		          },
+    		          emphasis: {
+    		              show: false
+    		          }
+    		        },
+    		        data:data_chart
+    		    }]
+    		};
+    	    var content = document.getElementById('chartcontent');
+    	    if(content == null){
+    	    	$("#popup").after("<div id=\"chartcontent\" style=\"height: 150px; width: 550px\"></div>");
+    	    }
+    	    var chart = echarts.init(document.getElementById('chartcontent'));
+    		chart.setOption(option);
+	   }
+		
+		var iconFeatures = [];
+	    for(var i=0;i<data.length;i++)
+	    {
+	    	var iconFeature = new ol.Feature({
+	            geometry: new ol.geom.Point(data[i].point),
+	            name: i,
+	            population: 4000,
+	            rainfall: 500
+	          });
+
+	          var iconStyle = new ol.style.Style({
+	            image: new ol.style.Icon(({
+	              anchor: [0.5, 29],
+	              anchorXUnits: 'fraction',
+	              anchorYUnits: 'pixels',
+	              src: 'css/images/label5-30.png'
+	            }))
+	          });
+
+	          iconFeature.setStyle(iconStyle);
+	          iconFeatures.push(iconFeature);
+	     }
+
+      var vectorSource = new ol.source.Vector({
+        features: iconFeatures
+      });
+
+      var vectorLayer = new ol.layer.Vector({
+        source: vectorSource
+      });
+	
+	var layers = [
+        new ol.layer.Image({
+          source: new ol.source.ImageArcGISRest({
+            ratio: 1,
+            params: {'LAYERS': "show:0,1"},
+            url: 'http://121.201.28.15:6080/arcgis/rest/services/JZDMDZ/XZQH/MapServer',
+			
+          })
+        }),
+        vectorLayer
+      ];
+      var map = new ol.Map({
+        layers: layers,
+        target: 'mapcontent',
+        view: new ol.View({
+          center: [12581840.603853151,4166934.0221550693],
+          zoom: 10,
+          minZoom:9,
+          maxZoom:12,
+          extent:[12467782.97,4028802.03,12670421.95,4260321.37]
+        })
+      });
+      var element = document.getElementById('popup');
+
+      var popup = new ol.Overlay({
+        element: element,
+        positioning: 'bottom-center',
+        stopEvent: false,
+        offset: [0, -30]
+      });
+      map.addOverlay(popup);
+
+      // display popup on click
+      map.on('click', function(evt) {
+    	  
+    	//$(element).popover('destroy');
+        var feature = map.forEachFeatureAtPixel(evt.pixel,
+            function(feature) {
+              return feature;
+            });
+        if (feature) {
+          var coordinates = feature.getGeometry().getCoordinates();
+          popup.setPosition(coordinates);
+          
+          console.log(feature.get('name'));
+          initChart(feature.get('name'));
+          
+          $(element).popover({
+            'placement': 'top',
+            'html': true,
+            'content': document.getElementById('chartcontent')
+            	//feature.get('name')+""
+          });
+          $(element).popover('show');
+        } else {
+          $(element).popover('destroy');
+        }
+      });
+
+      // change mouse cursor when over marker
+      map.on('pointermove', function(e) {
+        if (e.dragging) {
+          //$(element).popover('destroy');
+          return;
+        }
+        var pixel = map.getEventPixel(e.originalEvent);
+        var hit = map.hasFeatureAtPixel(pixel);
+        map.getViewport().style.cursor = hit ? 'pointer' : '';
+      });
+</script>
+</html>
