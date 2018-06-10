@@ -123,6 +123,11 @@
       </div>
     </div>
     <button class="submit" @click="submit">提交</button>
+    <div>
+      <el-dialog title="提示" :visible.sync="dialogVisible" width="30%" :show-close='false'>
+        <span>正在提交中,请稍等.....</span>
+      </el-dialog>
+    </div>
   </div>
 </body>
 <script>
@@ -130,6 +135,7 @@
     el: '#wrap',
     data() {
       return {
+        dialogVisible: false,
         radion: {},
         radio2: [],
         radio3: [],
@@ -181,7 +187,7 @@
           if (time == 0) {
             time = 0
             clearInterval(clear)
-            alert('考试试卷到，试卷已自动提交')
+            alert('考试试卷到，已自动提交')
             _this.submitGet()
           }
         }, 1000)
@@ -283,7 +289,7 @@
           })
         })
         _this.ceshiyixa = arrData
-        _this.jso = JSON.stringify(arrData)
+        _this.jso = arrData
       },
       submit: function () {
         this.getNowFormatDate()
@@ -315,25 +321,47 @@
       },
       //继续提交的接口
       submitGet: function () {
+        this.dialogVisible = true
         var _this = this
-        $.post('/XBM_RootDir/Web/PAGE_104_3.bsp', {
+        var uid = localStorage.getItem('UID')
+        uid = JSON.parse(uid)
+        var data = {
           'SJ_BH': _this.list.SJ_BH,
-          'SJ_UID': localStorage.getItem('UID'),
+          'SJ_UID': uid,
           'KSSJ': _this.timeFirst,
           'JSSJ': _this.currentdate,
           'DATA': _this.jso
-        }, function (respose) {
-          if (respose.rel === "提交成功！") {
-            _this.$alert('提交成功', '提示', {
-              confirmButtonText: '确定',
-              callback: function () {
-                window.location.href = './theTest.html'
-                var obj = {
-                  data: []
+        }
+        $.ajax({
+          url: '/XBM_RootDir/Web/PAGE_104_3.bsp',
+          type: 'POST',
+          cache: false,
+          contentType: 'application/json',
+          data: JSON.stringify(data),
+          success: function (respose) {
+            console.log(respose)
+            if (respose.rel === "提交成功！") {
+              _this.dialogVisible = false
+              _this.$alert('提交成功', '提示', {
+                confirmButtonText: '确定',
+                callback: function () {
+                  window.location.href = './theTest.html'
+                  var obj = {
+                    data: []
+                  }
+                  var obj1 = {
+                    data: []
+                  }
+                  localStorage.setItem('dataS', JSON.stringify(obj))
+                  localStorage.setItem('data3', JSON.stringify(obj1))
                 }
-                localStorage.setItem('dataS', JSON.stringify(obj))
-              }
-            })
+              })
+            } else {
+              _this.dialogVisible = false
+              _this.$alert('提交失败,请重试', '提示', {
+                confirmButtonText: '确定'
+              })
+            }
           }
         })
       }

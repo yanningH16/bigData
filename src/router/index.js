@@ -1,15 +1,16 @@
 import Vue from 'vue'
 import Router from 'vue-router'
-import HelloWorld from '@/components/HelloWorld'
-
+const userRechargeListss = () =>
+import(/* webpackChunkName: "userRechargeList" */ '@/components/mardown')
 Vue.use(Router)
 
 export default new Router({
-  routes: [
-    {
-      path: '/',
-      name: 'HelloWorld',
-      component: HelloWorld
+  routes: [{
+    path: '/',
+    component: userRechargeListss,
+    name: 'mardown',
+    meta: {
+      title: '用户充值记录'
     }
-  ]
+  }]
 })
