@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>考试详情</title>
+  <script src="./js/vueJS/vue.js"></script>
+  <script src="./js/element.js"></script>
+  <link rel="stylesheet" href="./css/element.css">
+  <link rel="stylesheet" href="./css//fonts/element-icons.ttf">
+  <link rel="stylesheet" href="./css/fonts/element-icons.woff">
+  <link rel="stylesheet" href="./css/style.css">
+  <script src="js/jquery-1.11.3.js"></script>
+  <script src="js/axios.js"></script>
+  <script src="js/plablel.js"></script>
+</head>
+<style>
+  html,
+  body,
+  head {
+    height: 100%;
+    width: 100%;
+  }
+
+  #wrap {
+    background: #f5f5f5;
+    width: 100%;
+    height: 100%;
+    padding-left: 20px
+  }
+
+  h3 {
+    background: #3585CA;
+    padding: 5px;
+    border-radius: 3px;
+    color: aliceblue
+  }
+
+  .contTab {
+    margin-top: 5px
+  }
+
+  .contet {
+    background: white
+  }
+</style>
+
+<body>
+  <div id="wrap">
+    <h3>试卷信息</h3>
+    <div class="contet">
+      <div class="contTab">
+        <el-tabs v-model="activeName2" type="card" @tab-click="handleClick_1">
+          <el-tab-pane name="1">
+            <span slot="label">
+              <i class="el-icon-tickets"></i>我的试卷</span>
+          </el-tab-pane>
+          <el-tab-pane name="2">
+            <span slot="label">
+              <i class="el-icon-date"></i>历史考试</span>
+          </el-tab-pane>
+        </el-tabs>
+      </div>
+      <!-- 我的试卷 -->
+      <div class="myPaper" v-show="myPaper">
+        <el-table :data="tableData" stripe style="width: 100%">
+          <el-table-column prop="SJ_BH" label="试卷编号" align="center">
+          </el-table-column>
+          <el-table-column prop="SJ_MC" label="试卷名称" align="center">
+          </el-table-column>
+          <el-table-column prop="SJ_KSSC" label="考试时长" align="center">
+            <template slot-scope="scope">
+              <span>{{scope.row.SJ_KSSC}}分钟</span>
+            </template>
+          </el-table-column>
+          <el-table-column prop="SJ_SJLX" label="试卷类型" align="center">
+          </el-table-column>
+          <el-table-column prop="SJ_JMFS" label="卷面分数" align="center">
+            <template slot-scope="scope">
+              <span>{{scope.row.SJ_JMFS}}分</span>
+            </template>
+          </el-table-column>
+          <el-table-column prop="SJ_JGFS" label="及格分数" align="center">
+            <template slot-scope="scope">
+              <span>{{scope.row.SJ_JGFS}}分</span>
+            </template>
+          </el-table-column>
+          <el-table-column prop="SJ_UNM" label="创建人" align="center">
+          </el-table-column>
+          <el-table-column label="操作" align="center" align="center">
+            <template slot-scope="scope">
+              <el-button @click="handleClickDetail(scope.row)" type="primary">考试</el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+      </div>
+      <!-- 历史考试 -->
+      <div class="old" v-show="old">
+        <el-table :data="tableData_1" stripe style="width: 100%">
+          <el-table-column prop="SJ_MC" label="试卷名称" align="center">
+          </el-table-column>
+          <el-table-column prop="KSSC" label="考试时长" align="center">
+          </el-table-column>
+          <el-table-column prop="KSHS" label="考试耗时" align="center">
+          </el-table-column>
+          <el-table-column prop="KSSJ" label="考试时间" align="center">
+          </el-table-column>
+          <el-table-column prop="KSLX" label="试卷类型" align="center">
+          </el-table-column>
+          <el-table-column prop="SJDF" label="试卷得分" align="center">
+          </el-table-column>
+          <el-table-column prop="JGJM" label="及格分数/卷面总分" align="center">
+          </el-table-column>
+        </el-table>
+      </div>
+    </div>
+  </div>
+</body>
+<script>
+  var app = new Vue({
+    el: '#wrap',
+    data: {
+      activeName2: '1',
+      myPaper: true,
+      old: false,
+      tableData: [],
+      tableData_1: []
+    },
+    created: function () {
+      this.getList()
+    },
+    methods: {
+      handleClickDetail: function (val) {
+        sessionStorage.setItem('BH', JSON.stringify(val.SJ_BH))
+        window.location.href = './stratTest.html'
+      },
+      handleClick_1: function (tab, event) {
+        console.log(tab, event);
+        if (this.activeName2 === '1') {
+          this.myPaper = true
+          this.old = false
+        } else {
+          this.myPaper = false
+          this.old = true
+          this.getOld()
+        }
+      },
+      //我的试卷
+      getList: function () {
+        var uid = localStorage.getItem('UID')
+        var _this = this
+        $.get('/XBM_RootDir/Web/PAGE_104_1.bsp?UID=' + 374, function (respose) {
+          _this.tableData = respose.DATA
+        })
+      },
+      //历史试卷
+      getOld: function () {
+        var uid = localStorage.getItem('UID')
+        var _this = this
+        $.get('/XBM_RootDir/Web/PAGE_104_4.bsp?UID=' + 374, function (respose) {
+          console.log(respose)
+          _this.tableData_1 = respose.DATA
+        })
+      }
+    }
+  })
+</script>
+
+</html>

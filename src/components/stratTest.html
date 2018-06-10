@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>考试中...</title>
+  <script src="./js/vueJS/vue.js"></script>
+  <script src="./js/element.js"></script>
+  <link rel="stylesheet" href="./css/element.css">
+  <link rel="stylesheet" href="./css//fonts/element-icons.ttf">
+  <link rel="stylesheet" href="./css/fonts/element-icons.woff">
+  <link rel="stylesheet" href="./css/style.css">
+  <script src="../Scripts/jquery-3.2.1.js"></script>
+</head>
+<style>
+  #wrap {
+    padding: 10px
+  }
+
+  .sj_num {
+    font-size: 12px
+  }
+
+  h3 {
+    text-align: center;
+    font-weight: 600;
+    font-size: 25px
+  }
+
+  .min_title {
+    padding: 20px;
+    text-align: center;
+    display: flex;
+    justify-content: space-around;
+    width: 50%;
+    margin: 0 auto;
+    font-size: 13px
+  }
+
+  .content {
+    width: 80%;
+    margin: 0 auto
+  }
+
+  .c_title {
+    font-size: 20px;
+    margin-bottom: 10px
+  }
+
+  .radios {
+    margin-top: 10px;
+    margin-left: 15px
+  }
+
+  .readiContet {
+    margin-top: 20px;
+    padding-bottom: 50px
+  }
+
+  .submit {
+    width: 100%;
+    height: 50px;
+    text-align: center;
+    background: #1F559D;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    cursor: pointer;
+    border: none;
+    outline: none;
+    color: white;
+    font-size: 15px;
+    font-weight: 500
+  }
+</style>
+
+<body>
+  <div id="wrap">
+    <p class="sj_num">试卷编号：{{list.SJ_BH}}</p>
+    <h3>{{list.SJ_MC}}</h3>
+    <ul class="min_title">
+      <li>考试时长:{{list.SJ_KSSC}}</li>
+      <li>试卷类型:{{list.SJ_SJLX}}</li>
+      <li>卷面总数:{{list.SJ_JMFS}}</li>
+      <li>及格分数:{{list.SJ_JGFS}}</li>
+      <li>参考人:{{list.SJ_UNM}}</li>
+      <!-- <li>距离交卷还有:{{getTimes}}</li> -->
+    </ul>
+    <div class="content">
+      <!-- 单选题 -->
+      <div class="readiContet">
+        <p class="c_title">一、选择题</p>
+        <ul>
+          <li v-for="(item,index) in radio2" style="margin-top: 15px">
+            <p>{{item.ST_BH}}.{{item.ST_TG}}</p>
+            <p class="radios">
+              <el-radio-group v-model='item.number'>
+                <el-radio label="A" style="margin-top: 10px">{{item.ST_A}}</el-radio>
+                <el-radio label="B" style="margin-top: 10px">{{item.ST_B}}</el-radio>
+                <el-radio label="C" style="margin-top: 10px">{{item.ST_C}}</el-radio>
+                <el-radio label="D" style="margin-top: 10px">{{item.ST_D}}</el-radio>
+              </el-radio-group>
+            </p>
+          </li>
+        </ul>
+      </div>
+      <!-- 判断题 -->
+      <div class="readiContet">
+        <p class="c_title">二、判断题</p>
+        <ul>
+          <li v-for="(item,index) in radio3" style="margin-top: 15px">
+            <p>{{item.ST_BH}}.{{item.ST_TG}}</p>
+            <p class="radios">
+              <el-radio-group v-model='item.number'>
+                <el-radio label="正确">正确</el-radio>
+                <el-radio label="错误">错误</el-radio>
+              </el-radio-group>
+            </p>
+          </li>
+        </ul>
+      </div>
+    </div>
+    <button class="submit" @click="submit">提交</button>
+  </div>
+</body>
+<script>
+  var app = new Vue({
+    el: '#wrap',
+    data() {
+      return {
+        radion: {},
+        radio2: [],
+        radio3: [],
+        list: {},
+        DATA: [],
+        currentdate: '',
+        timeFirst: '',
+        getTimes: '',
+        jso: '',
+        ceshiyixa: '',
+        point: true
+      }
+    },
+    created: function () {
+      this.getData()
+      this.autoSave()
+      this.getNowFormatDate()
+      this.timeFirst = this.currentdate;
+      this.djs()
+    },
+    methods: {
+      // 自动保存答案的方法
+      autoSave: function () {
+        var _this = this
+        var clearSave = setInterval(function () {
+          var obj = {
+            data: []
+          }
+          var obj1 = {
+            data: []
+          }
+          obj.data = _this.radio2;
+          obj1.data = _this.radio3
+          console.log(_this.radio2)
+          localStorage.setItem('dataS', JSON.stringify(obj))
+          localStorage.setItem('data3', JSON.stringify(obj1))
+          localStorage.setItem('setTimes', _this.getTimes)
+        }, 10000)
+
+      },
+      djs: function () {
+        var _this = this
+        var time = 3000; //50分钟换算成1800秒
+        var clear = setInterval(function () {
+          time = time - 1
+          var minute = parseInt(time / 60)
+          var second = parseInt(time % 60)
+          _this.getTimes = '还剩' + minute + '分' + second + '秒'
+          if (time == 0) {
+            time = 0
+            clearInterval(clear)
+            alert('考试试卷到，试卷已自动提交')
+            _this.submitGet()
+          }
+        }, 1000)
+      },
+      getData: function () {
+        var BH = sessionStorage.getItem('BH')
+        var uid = localStorage.getItem('UID')
+        var _this = this
+        $.get('/XBM_RootDir/Web/PAGE_104_2.bsp?SJBH=' + BH + '&UID=' + uid, function (respose) {
+          _this.list = respose
+          if (localStorage.getItem('dataS')) {
+            var getss = localStorage.getItem('dataS') //获取到时json格式
+            var gets = JSON.parse(getss).data //解析json字符串
+            if (gets.length !== 0 && gets[0].number != undefined) {
+              _this.radio2 = gets;
+            } else {
+              respose.DATA[0].DATA.forEach(function (val, index) {
+                _this.radio2.push({
+                  ST_A: val.ST_A,
+                  ST_B: val.ST_B,
+                  ST_C: val.ST_C,
+                  ST_D: val.ST_D,
+                  ST_BH: val.ST_BH,
+                  ST_TG: val.ST_TG,
+                  number: ''
+                })
+              })
+            }
+          } else {
+            respose.DATA[0].DATA.forEach(function (val, index) {
+              _this.radio2.push({
+                ST_A: val.ST_A,
+                ST_B: val.ST_B,
+                ST_C: val.ST_C,
+                ST_D: val.ST_D,
+                ST_BH: val.ST_BH,
+                ST_TG: val.ST_TG,
+                number: ''
+              })
+            })
+          }
+
+          if (localStorage.getItem('data3')) {
+            var get_1 = localStorage.getItem('data3')
+            var get_2 = JSON.parse(get_1).data
+            if (get_2.length !== 0 && get_2[0].number != undefined) {
+              _this.radio3 = get_2
+            } else {
+              respose.DATA[1].DATA.forEach(function (val, index) {
+                _this.radio3.push({
+                  ST_BH: val.ST_BH,
+                  ST_TG: val.ST_TG,
+                  number: ''
+                })
+              })
+            }
+          } else {
+            respose.DATA[1].DATA.forEach(function (val, index) {
+              _this.radio3.push({
+                ST_BH: val.ST_BH,
+                ST_TG: val.ST_TG,
+                number: ''
+              })
+            })
+          }
+        })
+      },
+      //获取当前时间
+      getNowFormatDate: function () {
+        var _this = this
+        var date = new Date()
+        var seperator1 = "-"
+        var seperator2 = ":"
+        var month = date.getMonth() + 1
+        var strDate = date.getDate()
+        if (month >= 1 && month <= 9) {
+          month = "0" + month
+        }
+        if (strDate >= 0 && strDate <= 9) {
+          strDate = "0" + strDate
+        }
+        _this.currentdate = date.getFullYear() + seperator1 + month + seperator1 + strDate +
+          " " + date.getHours() + seperator2 + date.getMinutes() + seperator2 + date.getSeconds()
+        console.log(_this.currentdate)
+      },
+      dataSave: function () {
+        var _this = this
+        var arrData = []
+        _this.radio2.forEach(function (val, index) {
+          arrData.push({
+            'ST_BH': val.ST_BH,
+            'ST_TJDA': val.number
+          })
+        })
+        _this.radio3.forEach(function (val, index) {
+          arrData.push({
+            'ST_BH': val.ST_BH,
+            'ST_TJDA': val.number
+          })
+        })
+        _this.ceshiyixa = arrData
+        _this.jso = JSON.stringify(arrData)
+      },
+      submit: function () {
+        this.getNowFormatDate()
+        this.dataSave()
+        var _this = this
+        for (let i = 0; i < _this.ceshiyixa.length; i++) {
+          if (_this.ceshiyixa[i].ST_TJDA === "") {
+            this.point = false
+            break;
+          }
+        }
+        if (this.point === false) {
+          _this.$confirm('您有题未做完,是否继续提交?', '提示', {
+            confirmButtonText: '确定',
+            cancelButtonText: '我在做会',
+            type: 'warning'
+          }).then((data) => {
+            this.submitGet()
+          }).catch((err) => {
+            console.log(err)
+            _this.$message({
+              type: 'info',
+              message: '已取消提交,请继续答题'
+            })
+          })
+        } else {
+          this.submitGet()
+        }
+      },
+      //继续提交的接口
+      submitGet: function () {
+        var _this = this
+        $.post('/XBM_RootDir/Web/PAGE_104_3.bsp', {
+          'SJ_BH': _this.list.SJ_BH,
+          'SJ_UID': localStorage.getItem('UID'),
+          'KSSJ': _this.timeFirst,
+          'JSSJ': _this.currentdate,
+          'DATA': _this.jso
+        }, function (respose) {
+          if (respose.rel === "提交成功！") {
+            _this.$alert('提交成功', '提示', {
+              confirmButtonText: '确定',
+              callback: function () {
+                window.location.href = './theTest.html'
+                var obj = {
+                  data: []
+                }
+                localStorage.setItem('dataS', JSON.stringify(obj))
+              }
+            })
+          }
+        })
+      }
+    }
+  })
+</script>
+
+</html>
